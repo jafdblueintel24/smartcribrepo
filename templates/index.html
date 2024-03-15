@@ -1,0 +1,196 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>LED Control</title>
+    
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <style>
+        .background {
+        	height: 100vh;
+            width: 100vw;
+            display: flex;
+        	background-image: linear-gradient(to bottom right,white 30%,#FFE5B4 70%);
+        
+        }
+    	.banner {
+        	position: flex;
+        	margin: auto;
+            margin-top: 10rem;
+        	display: grid;
+        	grid-template-columns: repeat(3, 1fr);
+            justify-content: space-between;
+           	 
+        }
+        .progress {
+            width: 200px;
+            height: 20px;
+            margin-top: 15px;
+            border: 1px solid #000;
+            margin-bottom: 10px;
+        }
+        .progress-bar {
+            width: 0%;
+            height: 100%;
+            background-color: #4CAF50;
+            text-align: center;
+            line-height: 20px;
+            color: white;
+        }
+        .SG {
+        	background-color: rgba(0,0,0,0.5);
+            color: #ede9e8;
+            padding: 1rem 1rem;
+            border-radius: 20px;
+            max-width: 20rem;
+            margin-right: 5rem;
+            
+        }
+        .CS {
+            background-color: rgba(0,0,0,0.5);
+            color: #ede9e8;
+            padding: 1rem 1rem;
+            border-radius: 20px;
+            max-width: 20rem;
+            margin-right: 5rem;
+        }
+        .LC {
+        	background-color: rgba(0,0,0,0.5);
+            color: #ede9e8;
+            padding: 1rem 1rem;
+            border-radius: 20px;
+            max-width: 20rem;
+            margin-right: 5rem;
+        
+        }
+
+        .soundSensor {
+        	background-color: rgba(0,0,0,0.5);
+            color: #ede9e8;
+            padding: 1rem 1rem;
+            border-radius: 20px;
+            max-width: 20rem;
+            margin-right: 5rem;
+            
+        }
+
+    </style>
+</head>
+<body>
+    <div class="background">
+    <div class="banner">
+        <div class="soundSensor">
+            <h1>Sound Sensor</h1>
+    <p>Sound gauge: <span id="soundGauge">No sound detected</span></p>
+        </div>
+    <div class="SG">
+    <h1>Sensor Gauge</h1>
+    <div id="sensorData">
+        <!-- Sensor data will be displayed here -->
+    </div>
+
+    <div class="progress">
+        <div class="progress-bar" id="humidityProgress">0%</div>
+    </div>
+
+    </div>
+    <div class="CS">
+    <h1>White Noise Generator</h1>
+    <p id="current-song">Now Playing: </p>
+    <button onclick="playMusic()">Play</button>
+    <button onclick="stopMusic()">Stop</button>
+    <button onclick="prevMusic()">Previous</button>
+    <button onclick="nextMusic()">Next</button>
+    </div>
+
+    <div class="LC" id="lightControl">
+        <h1>Light Control</h1>
+        <button onclick="sendColor('red')">Red</button>
+        <button onclick="sendColor('green')">Green</button>
+        <button onclick="sendColor('blue')">Blue</button>
+        <button onclick="sendColor('default')">Default</button>
+        <button onclick="turnOff()">Off</button>
+    </div>
+    </div>
+    </div>
+    <script>
+
+function playMusic() {
+            sendRequest('play');
+        }
+
+        function stopMusic() {
+            sendRequest('stop');
+        }
+
+        function prevMusic() {
+            sendRequest('prev');
+        }
+
+        function nextMusic() {
+            sendRequest('next');
+        }
+
+        function sendRequest(action) {
+            fetch('/play_music/' + action)
+            .then(response => response.json())
+            .then(data => {
+                // Update the current song name
+                document.getElementById('current-song').textContent = 'Now Playing: ' + data.song_name;
+            });
+        }
+        
+        $(document).ready(function() {
+            // Periodically fetch sensor data and update the page
+            setInterval(function() {
+                $.getJSON('/sensor_data', function(data) {
+                    $('#sensorData').html(
+                        'Temperature: ' + data.temperature_c + '°C, ' +
+                        'Temperature: ' + data.temperature_f + '°F, ' +
+                        'Humidity: ' + data.humidity + '%'
+                    );
+
+                    // Update the humidity progress bar
+                    $('#humidityProgress').css('width', data.humidity + '%').text(data.humidity + '%');
+                });
+            }, 3000); // Update every 3 seconds
+        });
+    </script>
+
+    
+
+    <script>
+        function sendColor(color) {
+            $.getJSON('/control/' + color, function(data) {
+                console.log(data);
+            });
+        }
+
+        function turnOff() {
+            $.getJSON('/control/off', function(data) {
+                console.log(data);
+            });
+        }
+        
+    </script>
+
+
+  <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
+  <script>
+    $(document).ready(function() {
+        function updateSoundStatus() {
+            $.ajax({
+                url: '/sound_status',
+                type: 'GET',
+                success: function(data) {
+                    $('#soundGauge').text(data);
+                }
+            });
+        }
+
+        setInterval(updateSoundStatus, 1000);
+    });
+</script>
+
+
+</body>
+</html>
