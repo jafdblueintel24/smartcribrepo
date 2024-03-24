@@ -6,16 +6,40 @@
     <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
     <style>
         .background {
-        	height: 100vh;
-            width: 100vw;
-            display: flex;
-        	background-image: linear-gradient(to bottom right,white 30%,#FFE5B4 70%);
-        
+        	height: 100%;
+            width: 100%;
+            display: absolute;
+        	overflow: hidden;
+        }
+        .title {
+            text-align: center;
+            margin-top: 50px;
+            color: #5c5c5c;
+            font-size: 40px;
+        }
+
+        .image-banner{
+            width: 100%;
+            height: 100%;
+            top: 0;
+            left: 0;
+            position: absolute;
+            z-index: -2;
+            overflow: hidden;
+        }
+        .BG{
+            width: 100%;
+            height: 100%;
+            background-position: center;
+            background-repeat: no-repeat;
+            object-fit: cover;
+
         }
     	.banner {
         	position: flex;
         	margin: auto;
-            margin-top: 10rem;
+            margin-top: 5rem;
+            margin-left: 70px;
         	display: grid;
         	grid-template-columns: repeat(3, 1fr);
             justify-content: space-between;
@@ -52,6 +76,7 @@
             border-radius: 20px;
             max-width: 20rem;
             margin-right: 5rem;
+            margin-top: 2rem;
         }
         .LC {
         	background-color: rgba(0,0,0,0.5);
@@ -60,9 +85,8 @@
             border-radius: 20px;
             max-width: 20rem;
             margin-right: 5rem;
-        
+            margin-top: 2rem;
         }
-
         .soundSensor {
         	background-color: rgba(0,0,0,0.5);
             color: #ede9e8;
@@ -70,14 +94,26 @@
             border-radius: 20px;
             max-width: 20rem;
             margin-right: 5rem;
-            
+        }
+        .cameraButton{
+        	background-color: rgba(0,0,0,0.5);
+            color: #ede9e8;
+            padding: 1rem 1rem;
+            border-radius: 20px;
+            max-width: 20rem;
+            margin-right: 5rem;
         }
 
     </style>
 </head>
 <body>
     <div class="background">
+        <h1 class="title">Baby Watch Smartcrib</h1>
+        <div class="image-banner">
+            <img src = "{{url_for('static', filename='Dashboard_background.png')}}" alt="My Background" class="BG"/>
+        </div>
     <div class="banner">
+    
         <div class="soundSensor">
             <h1>Sound Sensor</h1>
     <p>Sound gauge: <span id="soundGauge">No sound detected</span></p>
@@ -93,6 +129,15 @@
     </div>
 
     </div>
+
+    <div class="cameraButton">
+        <h1>Raspberry Pi Camera Stream</h1>
+        <button onclick="redirectToCamera()">View Live Camera Feed</button>
+
+
+    </div>
+
+
     <div class="CS">
     <h1>White Noise Generator</h1>
     <p id="current-song">Now Playing: </p>
@@ -191,6 +236,18 @@ function playMusic() {
     });
 </script>
 
+
+<script>
+    function redirectToPicameraUI() {
+        window.location.href = "/picamera_ui";  // Redirect to the route for the Picamera2 UI
+    }
+    </script>
+
+<script>
+    function redirectToCamera() {
+        window.location.href = "/live_feed";
+    }
+</script>
 
 </body>
 </html>

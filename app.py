@@ -1,4 +1,4 @@
-from flask import Flask, render_template, jsonify
+from flask import Flask, render_template, jsonify, request, Response
 import time
 import board
 import neopixel
@@ -8,23 +8,66 @@ import pygame
 import os
 import RPi.GPIO as GPIO
 
-app = Flask(__name__)
 
-# Pin Declaration
-soundSensorPin = 26
+import picamera2 #camera module for RPi camera
+from picamera2 import Picamera2
+from picamera2.encoders import JpegEncoder, H264Encoder
+from picamera2.outputs import FileOutput, FfmpegOutput
+import io
 
-# GPIO Settings
-GPIO.setmode(GPIO.BCM)
-GPIO.setup(soundSensorPin, GPIO.IN, pull_up_down=GPIO.PUD_DOWN)
+import subprocess
+from flask_restful import Resource, Api, reqparse, abort
+import atexit
+from datetime import datetime
+from threading import Condition
+from flask import redirect, url_for
 
-no_sound_detected_time = time.time()
 
-def soundSensorHandler(argument):
-    global no_sound_detected_time
-    print("Sound Detected")
-    no_sound_detected_time = time.time()  # Update the time when sound is detected
 
-GPIO.add_event_detect(soundSensorPin, GPIO.RISING, callback=soundSensorHandler, bouncetime=300)
+
+
+app = Flask(__name__, static_folder='static')
+api = Api(app)
+
+class StreamingOutput(io.BufferedIOBase):
+	def __init__(self):
+		self.frame = None
+		self.condition = Condition()
+
+	def write(self, buf):
+		with self.condition:
+			self.frame = buf
+			self.condition.notify_all()
+
+#defines the function that generates our frames
+def genFrames():
+	with picamera2.Picamera2() as camera:
+		camera.configure(camera.create_video_configuration(main={"size": (640, 480)}))
+		encoder = JpegEncoder()
+		output1 = FfmpegOutput('test2.mp4', audio=False) 
+		output3 = StreamingOutput()
+		output2 = FileOutput(output3)
+		encoder.output = [output1, output2]
+		
+		camera.start_encoder(encoder) 
+		camera.start() 
+		output1.start() 
+		time.sleep(5) 
+		output1.stop() 
+		print('done')
+		while True:
+			with output3.condition:
+				output3.condition.wait()
+			frame = output3.frame
+			yield (b'--frame\r\n'
+				b'Content-Type: image/jpeg\r\n\r\n' + frame + b'\r\n')
+            
+#defines the route that will access the video feed and call the feed function
+class video_feed(Resource):
+	def get(self):
+		return Response(genFrames(),
+                    mimetype='multipart/x-mixed-replace; boundary=frame')
+     
 
 # Initialize Pygame mixer
 pygame.mixer.init()
@@ -55,16 +98,12 @@ humidity_scaling_factor = 0.5  # Adjust this factor as needed
 def index():
     return render_template('index.html', music_files=music_files)
 
+api.add_resource(video_feed, '/cam')
 
-@app.route('/sound_status')
-def get_sound_status():
-    global no_sound_detected_time
-    if time.time() - no_sound_detected_time >= 3:
-        return "Awaiting sound input"
-    elif GPIO.input(soundSensorPin):
-        return "Sound detected"
-    else:
-        return "No sound detected"
+@app.route('/live_feed')
+def live_feed():
+    return render_template('live_feed.html')
+
 
 
 # Define a route to handle playing music
@@ -168,4 +207,6 @@ def sensor_data():
     
 
 if __name__ == "__main__":
-    app.run(debug=True, host='0.0.0.0')
+    app.run(debug = False, host = '0.0.0.0', port=5000)
+
+     
